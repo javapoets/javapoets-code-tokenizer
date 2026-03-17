@@ -1,0 +1,47 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.javapoets'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    mainClass = 'javapoets.tokenizer.TokenizerDemo'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    implementation 'org.assertj:assertj-core:3.25.3'
+
+    // Logging API
+    implementation 'org.slf4j:slf4j-api:2.0.13'
+
+    // Log4j2 binding for SLF4J
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.23.1'
+
+    // Log4j2 core
+    implementation 'org.apache.logging.log4j:log4j-core:2.23.1'
+
+    // (optional but recommended)
+    implementation 'org.apache.logging.log4j:log4j-api:2.23.1'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.assertj:assertj-core:3.25.3'
+}
+
+test {
+    useJUnitPlatform()
+}
