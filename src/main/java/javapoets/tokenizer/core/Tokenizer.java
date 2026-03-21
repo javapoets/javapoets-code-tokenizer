@@ -11,27 +11,38 @@ public final class Tokenizer {
     private final LanguageDefinition languageDefinition;
     private final boolean emitWhitespace;
     private final boolean emitComments;
+    private final OperatorTrie operatorTrie;
+    private boolean canStartRegex = true;
 
     public Tokenizer(LanguageDefinition languageDefinition) {
         this(languageDefinition, false, false);
-        log.trace("(languageDefinition)");
+        //log.trace("(languageDefinition)");
     }
 
     public Tokenizer(LanguageDefinition languageDefinition, boolean emitWhitespace, boolean emitComments) {
-        log.trace("(languageDefinition, emitWhitespace, emitComments)");
+        //log.trace("(languageDefinition, emitWhitespace, emitComments)");
+        log.trace("({}, {}, {})", languageDefinition, emitWhitespace, emitComments);
         this.languageDefinition = languageDefinition;
         this.emitWhitespace = emitWhitespace;
         this.emitComments = emitComments;
+        this.operatorTrie = new OperatorTrie(this.languageDefinition.operators());
     }
 
     public List<Token> tokenize(String input) {
-        log.trace("tokenize(input)");
-        CharReader reader = new CharReader(input);
+        //log.trace("tokenize(input)");
+        log.trace("tokenize('{}')", input);
+        CharReader charReader = new CharReader(input);
         List<Token> tokens = new ArrayList<>();
 
-        while (!reader.isAtEnd()) {
-            Token token = nextToken(reader);
-            log.debug("Token: {} '{}'", token.type(), token.lexeme());
+        while (!charReader.isAtEnd()) {
+
+            Token token = nextToken(charReader);
+            //Token token = tryReadRegex(charReader);
+            //log.debug("token = '{}'", token);
+            //if (regex != null) return regex;
+            //log.info("Token: {} '{}'", token.type(), token.lexeme());
+            //log.debug(token.toString());
+
             if (token != null) {
                 if (shouldEmit(token)) {
                     tokens.add(token);
@@ -39,7 +50,7 @@ public final class Tokenizer {
             }
         }
 
-        SourcePosition eof = reader.position();
+        SourcePosition eof = charReader.position();
         tokens.add(new Token(TokenType.EOF, "", eof, eof, TokenChannel.DEFAULT));
         return tokens;
     }
@@ -52,35 +63,83 @@ public final class Tokenizer {
         };
     }
 
-    private Token nextToken(CharReader reader) {
-        log.trace("nextToken(reader)");
+    /*
+    private Token nextToken_V1(CharReader charReader) {
+        //log.trace("nextToken(charReader)");
 
-        log.debug("Reading next token at position {}", reader.position());
+        //log.info("Reading next token at position {}", charReader.position());
+
+        char ch = charReader.peek();
+
+        if (Character.isWhitespace(ch)) {
+            return readWhitespace(charReader);
+        }
+
+        Token comment = tryReadComment(charReader);
+        if (comment != null) return comment;
+
+        if (languageDefinition.isIdentifierStart(ch)) {
+            return readIdentifierOrKeyword(charReader);
+        }
+
+        if (Character.isDigit(ch)) {
+            return readNumber(charReader);
+        }
+
+        if (ch == '"' || (ch == '\'' && languageDefinition.supportsCharLiterals()) || (ch == '`' && languageDefinition.supportsBacktickStrings())) {
+            return readStringLike(charReader);
+        }
+
+        Token operator = tryReadOperator(charReader);
+        if (operator != null) return operator;
+
+        if (languageDefinition.punctuation().contains(ch)) {
+            return readPunctuation(charReader);
+        }
+
+        return readUnknown(charReader);
+    }
+    */
+    private Token nextToken(CharReader reader) {
+        //log.trace("nextToken(charReader)");
+
+        //log.info("Reading next token at position {}", charReader.position());
 
         char ch = reader.peek();
 
+        // 1. whitespace
         if (Character.isWhitespace(ch)) {
             return readWhitespace(reader);
         }
 
+        // 2. comments
         Token comment = tryReadComment(reader);
         if (comment != null) return comment;
 
+        // 3. REGEX (must come BEFORE operator parsing)
+        Token regex = tryReadRegex(reader);
+        if (regex != null) return regex;
+
+        // 4. identifier / keyword
         if (languageDefinition.isIdentifierStart(ch)) {
             return readIdentifierOrKeyword(reader);
         }
 
+        // 5. number
         if (Character.isDigit(ch)) {
             return readNumber(reader);
         }
 
-        if (ch == '"' || (ch == '\'' && languageDefinition.supportsCharLiterals()) || (ch == '`' && languageDefinition.supportsBacktickStrings())) {
+        // 6. string
+        if (ch == '"' || ch == '\'' || ch == '`') {
             return readStringLike(reader);
         }
 
-        Token operator = tryReadOperator(reader);
-        if (operator != null) return operator;
+        // 7. operator (this includes "/")
+        Token op = tryReadOperator(reader);
+        if (op != null) return op;
 
+        // 8. punctuation
         if (languageDefinition.punctuation().contains(ch)) {
             return readPunctuation(reader);
         }
@@ -88,71 +147,71 @@ public final class Tokenizer {
         return readUnknown(reader);
     }
 
-    private Token readWhitespace(CharReader reader) {
-        SourcePosition start = reader.position();
-        int startIdx = reader.index();
+    private Token readWhitespace(CharReader charReader) {
+        SourcePosition start = charReader.position();
+        int startIdx = charReader.index();
 
-        while (!reader.isAtEnd() && Character.isWhitespace(reader.peek())) {
-            reader.advance();
+        while (!charReader.isAtEnd() && Character.isWhitespace(charReader.peek())) {
+            charReader.advance();
         }
 
         return new Token(
               TokenType.WHITESPACE
-            , reader.slice(startIdx, reader.index())
+            , charReader.slice(startIdx, charReader.index())
             , start
-            , reader.position()
+            , charReader.position()
             , TokenChannel.HIDDEN
         );
     }
 
-    private Token tryReadComment(CharReader reader) {
-        SourcePosition start = reader.position();
-        int startIdx = reader.index();
+    private Token tryReadComment(CharReader charReader) {
+        SourcePosition start = charReader.position();
+        int startIdx = charReader.index();
 
-        if (languageDefinition.supportsLineComments() && reader.startsWith("//")) {
-            reader.advance();
-            reader.advance();
-            while (!reader.isAtEnd() && reader.peek() != '\n') {
-                reader.advance();
+        if (languageDefinition.supportsLineComments() && charReader.startsWith("//")) {
+            charReader.advance();
+            charReader.advance();
+            while (!charReader.isAtEnd() && charReader.peek() != '\n') {
+                charReader.advance();
             }
             return new Token(
                 TokenType.LINE_COMMENT,
-                reader.slice(startIdx, reader.index()),
+                charReader.slice(startIdx, charReader.index()),
                 start,
-                reader.position(),
+                charReader.position(),
                 TokenChannel.HIDDEN
             );
         }
 
-        if (languageDefinition.supportsBlockComments() && reader.startsWith("/*")) {
-            reader.advance();
-            reader.advance();
-            while (!reader.isAtEnd() && !reader.startsWith("*/")) {
-                reader.advance();
+        if (languageDefinition.supportsBlockComments() && charReader.startsWith("/*")) {
+            charReader.advance();
+            charReader.advance();
+            while (!charReader.isAtEnd() && !charReader.startsWith("*/")) {
+                charReader.advance();
             }
-            if (reader.startsWith("*/")) {
-                reader.advance();
-                reader.advance();
+            if (charReader.startsWith("*/")) {
+                charReader.advance();
+                charReader.advance();
             }
             return new Token(
                   TokenType.BLOCK_COMMENT
-                , reader.slice(startIdx, reader.index())
+                , charReader.slice(startIdx, charReader.index())
                 , start
-                , reader.position()
+                , charReader.position()
                 , TokenChannel.HIDDEN
             );
         }
 
-        if (languageDefinition.supportsHashComments() && reader.peek() == '#') {
-            reader.advance();
-            while (!reader.isAtEnd() && reader.peek() != '\n') {
-                reader.advance();
+        if (languageDefinition.supportsHashComments() && charReader.peek() == '#') {
+            charReader.advance();
+            while (!charReader.isAtEnd() && charReader.peek() != '\n') {
+                charReader.advance();
             }
             return new Token(
                   TokenType.LINE_COMMENT
-                , reader.slice(startIdx, reader.index())
+                , charReader.slice(startIdx, charReader.index())
                 , start
-                , reader.position()
+                , charReader.position()
                 , TokenChannel.HIDDEN
             );
         }
@@ -160,16 +219,16 @@ public final class Tokenizer {
         return null;
     }
 
-    private Token readIdentifierOrKeyword(CharReader reader) {
-        SourcePosition start = reader.position();
-        int startIdx = reader.index();
+    private Token readIdentifierOrKeyword(CharReader charReader) {
+        SourcePosition start = charReader.position();
+        int startIdx = charReader.index();
 
-        reader.advance();
-        while (!reader.isAtEnd() && languageDefinition.isIdentifierPart(reader.peek())) {
-            reader.advance();
+        charReader.advance();
+        while (!charReader.isAtEnd() && languageDefinition.isIdentifierPart(charReader.peek())) {
+            charReader.advance();
         }
 
-        String lexeme = reader.slice(startIdx, reader.index());
+        String lexeme = charReader.slice(startIdx, charReader.index());
 
         TokenType type;
         if (languageDefinition.keywords().contains(lexeme)) {
@@ -182,61 +241,61 @@ public final class Tokenizer {
             type = TokenType.IDENTIFIER;
         }
 
-        return new Token(type, lexeme, start, reader.position(), TokenChannel.DEFAULT);
+        return new Token(type, lexeme, start, charReader.position(), TokenChannel.DEFAULT);
     }
 
-    private Token readNumber(CharReader reader) {
-        SourcePosition start = reader.position();
-        int startIdx = reader.index();
+    private Token readNumber(CharReader charReader) {
+        SourcePosition start = charReader.position();
+        int startIdx = charReader.index();
         boolean isFloat = false;
 
-        while (Character.isDigit(reader.peek())) {
-            reader.advance();
+        while (Character.isDigit(charReader.peek())) {
+            charReader.advance();
         }
 
-        if (reader.peek() == '.' && Character.isDigit(reader.peek(1))) {
+        if (charReader.peek() == '.' && Character.isDigit(charReader.peek(1))) {
             isFloat = true;
-            reader.advance(); // dot
-            while (Character.isDigit(reader.peek())) {
-                reader.advance();
+            charReader.advance(); // dot
+            while (Character.isDigit(charReader.peek())) {
+                charReader.advance();
             }
         }
 
-        if (reader.peek() == 'e' || reader.peek() == 'E') {
+        if (charReader.peek() == 'e' || charReader.peek() == 'E') {
             isFloat = true;
-            reader.advance();
-            if (reader.peek() == '+' || reader.peek() == '-') {
-                reader.advance();
+            charReader.advance();
+            if (charReader.peek() == '+' || charReader.peek() == '-') {
+                charReader.advance();
             }
-            while (Character.isDigit(reader.peek())) {
-                reader.advance();
+            while (Character.isDigit(charReader.peek())) {
+                charReader.advance();
             }
         }
 
         return new Token(
               isFloat ? TokenType.FLOAT_LITERAL : TokenType.INTEGER_LITERAL
-            , reader.slice(startIdx, reader.index())
+            , charReader.slice(startIdx, charReader.index())
             , start
-            , reader.position()
+            , charReader.position()
             , TokenChannel.DEFAULT
         );
     }
 
-    private Token readStringLike(CharReader reader) {
-        SourcePosition start = reader.position();
-        int startIdx = reader.index();
-        char quote = reader.advance();
+    private Token readStringLike(CharReader charReader) {
+        SourcePosition start = charReader.position();
+        int startIdx = charReader.index();
+        char quote = charReader.advance();
 
         TokenType type = switch (quote) {
             case '\'' -> TokenType.CHAR_LITERAL;
             default -> TokenType.STRING_LITERAL;
         };
 
-        while (!reader.isAtEnd()) {
-            char ch = reader.advance();
+        while (!charReader.isAtEnd()) {
+            char ch = charReader.advance();
 
             if (ch == '\\') {
-                if (!reader.isAtEnd()) reader.advance();
+                if (!charReader.isAtEnd()) charReader.advance();
                 continue;
             }
 
@@ -247,60 +306,137 @@ public final class Tokenizer {
 
         return new Token(
               type
-            , reader.slice(startIdx, reader.index())
+            , charReader.slice(startIdx, charReader.index())
             , start
-            , reader.position()
+            , charReader.position()
             , TokenChannel.DEFAULT
         );
     }
 
-    private Token tryReadOperator(CharReader reader) {
-        SourcePosition start = reader.position();
+    /*
+    private Token tryReadOperator_V1(CharReader charReader) {
+        SourcePosition start = charReader.position();
 
         for (String op : languageDefinition.operators()) {
-            if (reader.startsWith(op)) {
-                int startIdx = reader.index();
+            if (charReader.startsWith(op)) {
+                int startIdx = charReader.index();
                 for (int i = 0; i < op.length(); i++) {
-                    reader.advance();
+                    charReader.advance();
                 }
                 return new Token(
                       TokenType.OPERATOR
-                    , reader.slice(startIdx, reader.index())
+                    , charReader.slice(startIdx, charReader.index())
                     , start
-                    , reader.position()
+                    , charReader.position()
                     , TokenChannel.DEFAULT
                 );
             }
         }
-
         return null;
     }
+    */
+    private Token tryReadOperator(CharReader charReader) {
+        SourcePosition start = charReader.position();
+        int startIdx = charReader.index();
 
-    private Token readPunctuation(CharReader reader) {
-        SourcePosition start = reader.position();
-        int startIdx = reader.index();
-        reader.advance();
+        String op = operatorTrie.match(charReader);
+        if (op == null) return null;
+
+        return new Token(
+            TokenType.OPERATOR,
+            charReader.slice(startIdx, charReader.index()),
+            start,
+            charReader.position(),
+            TokenChannel.DEFAULT
+        );
+    }
+
+    private Token readPunctuation(CharReader charReader) {
+        SourcePosition start = charReader.position();
+        int startIdx = charReader.index();
+        charReader.advance();
 
         return new Token(
               TokenType.PUNCTUATION
-            , reader.slice(startIdx, reader.index())
+            , charReader.slice(startIdx, charReader.index())
             , start
-            , reader.position()
+            , charReader.position()
             , TokenChannel.DEFAULT
         );
     }
 
-    private Token readUnknown(CharReader reader) {
-        SourcePosition start = reader.position();
-        int startIdx = reader.index();
-        reader.advance();
+    private Token readUnknown(CharReader charReader) {
+        SourcePosition start = charReader.position();
+        int startIdx = charReader.index();
+        charReader.advance();
 
         return new Token(
               TokenType.UNKNOWN
-            , reader.slice(startIdx, reader.index())
+            , charReader.slice(startIdx, charReader.index())
             , start
-            , reader.position()
+            , charReader.position()
             , TokenChannel.DEFAULT
         );
     }
+
+    private void updateRegexContext(Token token) {
+        log.trace("updateRegexContext(token)");
+        log.trace("updateRegexContext({})", token);
+        switch (token.type()) {
+            case IDENTIFIER, INTEGER_LITERAL, FLOAT_LITERAL, STRING_LITERAL, BOOLEAN_LITERAL, NULL_LITERAL -> canStartRegex = false;
+            case PUNCTUATION -> {
+                String lex = token.lexeme();
+                canStartRegex = lex.equals("(") || lex.equals("{") || lex.equals("[") || lex.equals(",");
+            }
+            case OPERATOR -> canStartRegex = true;
+            case KEYWORD -> canStartRegex = true;
+            default -> canStartRegex = true;
+        }
+    }
+
+    private Token tryReadRegex(CharReader charReader) {
+        //log.trace("tryReadRegex(charReader)");
+        //log.trace("tryReadRegex({})", charReader);
+
+        if (!canStartRegex || charReader.peek() != '/') return null;
+
+        SourcePosition start = charReader.position();
+        int startIdx = charReader.index();
+
+        charReader.advance(); // consume '/'
+
+        boolean inEscape = false;
+
+        while (!charReader.isAtEnd()) {
+            char c = charReader.advance();
+
+            if (inEscape) {
+                inEscape = false;
+                continue;
+            }
+
+            if (c == '\\') {
+                inEscape = true;
+                continue;
+            }
+
+            if (c == '/') {
+                break;
+            }
+        }
+
+        // flags
+        while (Character.isLetter(charReader.peek())) {
+            charReader.advance();
+        }
+
+        return new Token(
+            TokenType.STRING_LITERAL, // or REGEX_LITERAL if you add it
+            charReader.slice(startIdx, charReader.index()),
+            start,
+            charReader.position(),
+            TokenChannel.DEFAULT
+        );
+    }
+
 }

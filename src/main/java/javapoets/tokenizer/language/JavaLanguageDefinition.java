@@ -6,6 +6,15 @@ import javapoets.tokenizer.core.*;
 
 public final class JavaLanguageDefinition extends AbstractLanguageDefinition {
 
+     public String toString() {
+        return new StringBuilder()
+            .append(getClass().getSimpleName())
+            .append("{")
+            .append(name())
+            .append("}")
+            .toString();
+     }
+
     private static final Set<String> KEYWORDS = Set.of(
         "abstract","assert","boolean","break","byte","case","catch","char","class",
         "const","continue","default","do","double","else","enum","extends","final",

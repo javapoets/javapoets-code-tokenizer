@@ -14,14 +14,34 @@ public class LoggingTokenPrinter {
 
         log.debug("=== Token Stream ===");
 
-        for (Token t : tokens) {
+        for (Token token : tokens) {
+            /*
             log.debug(String.format(
                 "%-18s %-12s (%d:%d)",
-                t.type(),
-                t.lexeme(),
-                t.start().line(),
-                t.start().column()
+                token.type(),
+                token.lexeme(),
+                token.start().line(),
+                token.start().column()
             ));
+            */
+            log.debug(token.toString());
         }
     }
+
+    public static void printToken(Token token) {
+
+        if (!log.isDebugEnabled()) return;
+
+        /*
+        log.debug(String.format(
+            "%-18s %-12s (%d:%d)",
+            token.type(),
+            token.lexeme(),
+            token.start().line(),
+            token.start().column()
+        ));
+        */
+        log.debug(token.toString());
+    }
+
 }

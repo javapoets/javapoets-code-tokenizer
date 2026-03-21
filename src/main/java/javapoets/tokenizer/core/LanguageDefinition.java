@@ -23,4 +23,6 @@ public interface LanguageDefinition {
 
     boolean isIdentifierStart(char ch);
     boolean isIdentifierPart(char ch);
+
+    
 }

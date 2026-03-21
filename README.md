@@ -131,6 +131,14 @@ VariableDeclaration
              └── Literal(2)
 ```
 
+## Testing
+```
+$ gradle test
+# gradle test --info
+$ gradle test --tests "javapoets.tokenizer.test.JavaTokenizerTest"
+$ gradle test --tests "*JavaTokenizerTest"
+```
+
 ---
 
 ## 🔧 Language Support

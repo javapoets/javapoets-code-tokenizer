@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import javapoets.tokenizer.core.Token;
 import javapoets.tokenizer.core.Tokenizer;
 import javapoets.tokenizer.language.JavascriptLanguageDefinition;
+import javapoets.tokenizer.debug.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,6 +21,9 @@ class JavascriptTokenizerTest {
 
         Tokenizer tokenizer = new Tokenizer(new JavascriptLanguageDefinition());
         List<Token> tokens = tokenizer.tokenize(code);
+
+        log.debug("\\n=== JavaScript Tokens ===");
+        LoggingTokenPrinter.print(tokens);
 
         assertThat(tokens)
             .extracting(Token::lexeme)

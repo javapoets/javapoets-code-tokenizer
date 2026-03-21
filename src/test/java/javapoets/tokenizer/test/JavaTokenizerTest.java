@@ -6,6 +6,7 @@ import javapoets.tokenizer.core.Token;
 import javapoets.tokenizer.core.TokenType;
 import javapoets.tokenizer.core.Tokenizer;
 import javapoets.tokenizer.language.JavaLanguageDefinition;
+import javapoets.tokenizer.debug.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,6 +22,9 @@ class JavaTokenizerTest {
 
         Tokenizer tokenizer = new Tokenizer(new JavaLanguageDefinition());
         List<Token> tokens = tokenizer.tokenize(code);
+
+        log.debug("=== Java Tokens ===");
+        LoggingTokenPrinter.print(tokens);
 
         assertThat(tokens)
             .extracting(Token::type)

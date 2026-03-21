@@ -7,32 +7,29 @@ import javapoets.tokenizer.core.*;
 public final class JavascriptLanguageDefinition extends AbstractLanguageDefinition {
 
     private static final Set<String> KEYWORDS = Set.of(
-        "abstract","assert","boolean","break","byte","case","catch","char","class",
-        "const","continue","default","do","double","else","enum","extends","final",
-        "finally","float","for","goto","if","implements","import","instanceof","int",
-        "interface","long","native","new","package","private","protected","public",
-        "return","short","static","strictfp","super","switch","synchronized","this",
-        "throw","throws","transient","try","void","volatile","while","record","sealed",
-        "permits","non-sealed","var"
+        "break","case","catch","class","const","continue","debugger","default","delete",
+        "do","else","export","extends","finally","for","function","if","import","in",
+        "instanceof","let","new","return","super","switch","this","throw","try",
+        "typeof","var","void","while","with","yield","await","static"
     );
 
     private static final Set<String> OPS = Set.of(
-        ">>>=", ">>=", "<<=", ">>>", ">>", "<<",
-        "++", "--", "==", "!=", ">=", "<=", "&&", "||",
-        "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
-        "->", "::",
+        ">>>=", "===", "!==", ">>=", "<<=", "&&=", "||=", "??=",
+        "=>", "?.", "??", "++", "--", "==", "!=", ">=", "<=", "&&", "||",
+        "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "**", ">>", "<<", ">>>",
         "+", "-", "*", "/", "%", "=",
         ">", "<", "!", "~", "&", "|", "^", "?",
         ":"
     );
 
     private static final Set<Character> PUNCT = Set.of(
-        '(', ')', '{', '}', '[', ']', ';', ',', '.','@'
+        '(', ')', '{', '}', '[', ']', ';', ',', '.'
     );
 
     @Override
     public String name() {
-        return "Java";
+        //return "JavaScript";
+        return "JS";
     }
 
     @Override
@@ -51,7 +48,23 @@ public final class JavascriptLanguageDefinition extends AbstractLanguageDefiniti
     }
 
     @Override
-    public boolean supportsCharLiterals() {
+    public boolean supportsBacktickStrings() {
         return true;
     }
+
+    @Override
+    public boolean supportsCharLiterals() {
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder()
+            .append(getClass().getSimpleName())
+            .append("{")
+            .append(name())
+            .append("}")
+            .toString();
+     }
+
 }
