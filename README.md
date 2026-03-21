@@ -137,6 +137,7 @@ $ gradle test
 # gradle test --info
 $ gradle test --tests "javapoets.tokenizer.test.JavaTokenizerTest"
 $ gradle test --tests "*JavaTokenizerTest"
+$ gradle test --tests "javapoets.tokenizer.test.JavascriptPrettyPrintTokenizerTest"
 ```
 
 ---
