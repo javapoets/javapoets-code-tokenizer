@@ -30,10 +30,13 @@ public class Parser {
     // -------------------------
 
     private Statement parseStatement() {
-        Token t = tokens.peek();
 
-        if (t.type() == TokenType.KEYWORD) {
-            String kw = t.lexeme();
+        Token token = tokens.peek();
+
+        log.debug("Parsing statement starting with: {}", token);
+
+        if (token.type() == TokenType.KEYWORD) {
+            String kw = token.lexeme();
 
             if (kw.equals("int") || kw.equals("let") || kw.equals("const") || kw.equals("var")) {
                 return parseVariableDeclaration();

@@ -116,7 +116,8 @@ public class TokenizerDemo {
         //Parser parser = new Parser(tokenStream);
         parser = new Parser(tokenStream);
         List<Statement> astStatements = parser.parseProgram();
-        PrettyPrinterVisitor printer = new PrettyPrinterVisitor();
+        //PrettyPrinterVisitor printer = new PrettyPrinterVisitor();
+        AstPrinterVisitor printer = new AstPrinterVisitor();
         for (Statement stmt : astStatements) {
             String output = stmt.accept(printer);
             //System.out.print(output);
