@@ -29,4 +29,32 @@ class JavascriptTokenizerTest {
             .extracting(Token::lexeme)
             .contains("function", "add", "a", "b", "return", "+");
     }
+
+    @Test
+    void should_handle_block_scopes() {
+        String code = """
+            {
+              let x = 1;
+            }
+            let x = 2;
+        """;
+
+        Tokenizer tokenizer = new Tokenizer(new JavaScriptLanguageDefinition());
+        var tokens = tokenizer.tokenize(code);
+
+        var parser = new Parser(new TokenStream(tokens));
+        var ast = parser.parseProgram();
+
+        var obfuscator = new ObfuscationVisitor();
+
+        var result = ast.stream()
+            .map(stmt -> (Statement) stmt.accept(obfuscator))
+            .toList();
+
+        var printer = new PrettyPrinterVisitor();
+
+        for (Statement stmt : result) {
+            System.out.print(stmt.accept(printer));
+        }
+    }
 }

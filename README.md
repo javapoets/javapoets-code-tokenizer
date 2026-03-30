@@ -1,36 +1,36 @@
 # Javapoets Code Tokenizer
 
-A production-grade, extensible tokenizer and parser framework for Java and JavaScript, built in Java.
+A production-grade, extensible tokenizer and parser framework for Java and JavaScript, written in Java.
 
 ---
 
-## ✨ Overview
+## Overview
 
 **Javapoets Code Tokenizer** is a high-performance lexical analysis and parsing library designed for:
 
 * Tokenizing source code into structured tokens
 * Building Abstract Syntax Trees (AST)
-* Supporting multiple programming languages (Java, JavaScript)
-* Serving as a foundation for compilers, linters, analyzers, and developer tools
+* Supporting multiple programming languages (initially Java andd JavaScript)
+* Serves as a foundation for compilers, linters, analyzers, and developer tools
 
 This project emphasizes **clean architecture**, **extensibility**, and **production-grade design principles**.
 
 ---
 
-## 🚀 Features
+## Features
 
-* ✅ Language-agnostic tokenizer core
-* ✅ Java and JavaScript language support
-* ✅ LL-style `TokenStream` with lookahead
-* ✅ Operator trie for efficient longest-match parsing
-* ✅ Context-aware JavaScript regex handling
-* ✅ Recursive descent parser with operator precedence
-* ✅ Extensible AST model
-* ✅ Clean separation of concerns (lexer, parser, AST)
+* Language-agnostic tokenizer core
+* Java and JavaScript language support
+* LL-style `TokenStream` with lookahead
+* Operator trie for efficient longest-match parsing
+* Context-aware JavaScript regex handling
+* Recursive descent parser with operator precedence
+* Extensible AST model
+* Clean separation of concerns (lexer, parser, AST)
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```text
 Source Code
@@ -56,7 +56,7 @@ com.javapoets.tokenizer
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Gradle
 
@@ -78,7 +78,7 @@ dependencies {
 
 ---
 
-## 🧪 Quick Start
+## Quick Start
 
 ### Tokenizing Code
 
@@ -110,7 +110,7 @@ System.out.println(ast);
 
 ---
 
-## 🌳 Example AST
+## Example AST
 
 Input:
 
@@ -140,9 +140,24 @@ $ gradle test --tests "*JavaTokenizerTest"
 $ gradle test --tests "javapoets.tokenizer.test.JavascriptPrettyPrintTokenizerTest"
 ```
 
+### Force clean rebuild (important)
+
+gradle clean test --rerun-tasks --info
+
+```
+$ gradle clean test --rerun-tasks --info
+```
+
+## Demo
+
+```
+$ ./gradlew run -PmainClass=javapoets.tokenizer.demo.ParserDemo
+$ ./gradlew run -PmainClass=javapoets.tokenizer.demo.ObfuscationVistitorDemo
+```
+
 ---
 
-## 🔧 Language Support
+## Language Support
 
 ### Java
 
@@ -160,7 +175,7 @@ $ gradle test --tests "javapoets.tokenizer.test.JavascriptPrettyPrintTokenizerTe
 
 ---
 
-## 🧠 Design Principles
+## Design Principles
 
 * **Separation of concerns**
   Lexer, parser, and AST are fully decoupled
@@ -179,7 +194,7 @@ $ gradle test --tests "javapoets.tokenizer.test.JavascriptPrettyPrintTokenizerTe
 
 ---
 
-## 🛠️ Use Cases
+## Use Cases
 
 * Static code analysis tools
 * Linters and formatters
@@ -190,7 +205,7 @@ $ gradle test --tests "javapoets.tokenizer.test.JavascriptPrettyPrintTokenizerTe
 
 ---
 
-## 🧩 Roadmap
+## Roadmap
 
 * [ ] Unary expressions (`!x`, `-x`)
 * [ ] Function calls and member access
@@ -203,26 +218,26 @@ $ gradle test --tests "javapoets.tokenizer.test.JavascriptPrettyPrintTokenizerTe
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
 ---
 
-## 📄 License
+## License
 
 MIT License
 
 ---
 
-## 👤 Author
+## Author
 
 **Dermot Doherty**
 Javapoets
 
 ---
 
-## ⭐ Final Thoughts
+## Final Thoughts
 
 This project is designed as a **foundation for building language tooling**, not just a tokenizer.
 

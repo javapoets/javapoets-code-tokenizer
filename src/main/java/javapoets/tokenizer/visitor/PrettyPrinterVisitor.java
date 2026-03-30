@@ -80,4 +80,72 @@ public class PrettyPrinterVisitor implements AstVisitor<String> {
 
         return sb.toString();
     }
+
+    @Override
+    public String visitAssignment(AssignmentExpression node) {
+        return node.target().accept(this)
+            + " " + node.operator() + " "
+            + node.value().accept(this);
+    }
+
+    @Override
+    public String visitIf(IfStatement node) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(indent())
+          .append("if (")
+          .append(node.condition().accept(this))
+          .append(") ");
+
+        sb.append(node.thenBranch().accept(this));
+
+        if (node.elseBranch() != null) {
+            sb.append(indent())
+              .append("else ")
+              .append(node.elseBranch().accept(this));
+        }
+
+        return sb.toString();
+    }
+
+    @Override
+    public String visitFunctionDeclaration(FunctionDeclaration node) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(indent())
+          .append("function ")
+          .append(node.name())
+          .append("(");
+
+        sb.append(String.join(", ", node.parameters()));
+        sb.append(") ");
+
+        sb.append(node.body().accept(this));
+
+        return sb.toString();
+    }
+
+    @Override
+    public String visitReturn(ReturnStatement node) {
+        if (node.expression() == null) {
+            return indent() + "return;\n";
+        }
+
+        return indent() + "return " + node.expression().accept(this) + ";\n";
+    }
+
+    @Override
+    public String visitFunctionCall(FunctionCallExpression node) {
+        String args = node.arguments().stream()
+            .map(arg -> arg.accept(this))
+            .reduce((a, b) -> a + ", " + b)
+            .orElse("");
+
+        return node.callee().accept(this) + "(" + args + ")";
+    }
+
+    @Override
+    public String visitMemberAccess(MemberAccessExpression node) {
+        return node.object().accept(this) + "." + node.property();
+    }
 }

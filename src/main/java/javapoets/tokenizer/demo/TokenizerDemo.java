@@ -1,4 +1,4 @@
-package javapoets.tokenizer;
+package javapoets.tokenizer.demo;
 
 import java.util.List;
 import javapoets.tokenizer.ast.*;

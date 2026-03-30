@@ -31,6 +31,7 @@ public final class Tokenizer {
     public List<Token> tokenize(String input) {
         //log.trace("tokenize(input)");
         log.trace("tokenize('{}')", input);
+        
         CharReader charReader = new CharReader(input);
         List<Token> tokens = new ArrayList<>();
 
@@ -40,7 +41,7 @@ public final class Tokenizer {
             //Token token = tryReadRegex(charReader);
             //log.debug("token = '{}'", token);
             //if (regex != null) return regex;
-            //log.info("Token: {} '{}'", token.type(), token.lexeme());
+            log.info("Token: {} '{}'", token.type(), token.lexeme());
             //log.debug(token.toString());
 
             if (token != null) {
@@ -100,51 +101,51 @@ public final class Tokenizer {
         return readUnknown(charReader);
     }
     */
-    private Token nextToken(CharReader reader) {
+    private Token nextToken(CharReader charReader) {
         //log.trace("nextToken(charReader)");
 
-        //log.info("Reading next token at position {}", charReader.position());
+        log.info("Reading next token at position {}", charReader.position());
 
-        char ch = reader.peek();
+        char ch = charReader.peek();
 
         // 1. whitespace
         if (Character.isWhitespace(ch)) {
-            return readWhitespace(reader);
+            return readWhitespace(charReader);
         }
 
         // 2. comments
-        Token comment = tryReadComment(reader);
+        Token comment = tryReadComment(charReader);
         if (comment != null) return comment;
 
         // 3. REGEX (must come BEFORE operator parsing)
-        Token regex = tryReadRegex(reader);
+        Token regex = tryReadRegex(charReader);
         if (regex != null) return regex;
 
         // 4. identifier / keyword
         if (languageDefinition.isIdentifierStart(ch)) {
-            return readIdentifierOrKeyword(reader);
+            return readIdentifierOrKeyword(charReader);
         }
 
         // 5. number
         if (Character.isDigit(ch)) {
-            return readNumber(reader);
+            return readNumber(charReader);
         }
 
         // 6. string
         if (ch == '"' || ch == '\'' || ch == '`') {
-            return readStringLike(reader);
+            return readStringLike(charReader);
         }
 
         // 7. operator (this includes "/")
-        Token op = tryReadOperator(reader);
+        Token op = tryReadOperator(charReader);
         if (op != null) return op;
 
         // 8. punctuation
         if (languageDefinition.punctuation().contains(ch)) {
-            return readPunctuation(reader);
+            return readPunctuation(charReader);
         }
 
-        return readUnknown(reader);
+        return readUnknown(charReader);
     }
 
     private Token readWhitespace(CharReader charReader) {

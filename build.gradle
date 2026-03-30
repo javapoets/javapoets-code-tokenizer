@@ -3,8 +3,8 @@ plugins {
     id 'application'
 }
 
-group = 'com.javapoets'
-version = '1.0.0'
+group = 'javapoets.tokenizer'
+version = '0.0.1'
 
 java {
     toolchain {
@@ -13,7 +13,8 @@ java {
 }
 
 application {
-    mainClass = 'javapoets.tokenizer.TokenizerDemo'
+    //mainClass = 'javapoets.tokenizer.demo.TokenizerDemo'
+    mainClass = project.findProperty("mainClass") ?: "javapoets.tokenizer.demo.TokenizerDemo"
 }
 
 repositories {

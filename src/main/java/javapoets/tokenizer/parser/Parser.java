@@ -8,6 +8,8 @@ import java.util.List;
 
 public class Parser {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Parser.class);
+
     private final TokenStream tokens;
 
     public Parser(TokenStream tokens) {
