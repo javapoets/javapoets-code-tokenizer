@@ -1,7 +1,8 @@
 package javapoets.tokenizer.parser;
 
 import javapoets.tokenizer.ast.*;
-import javapoets.tokenizer.core.*;
+import javapoets.tokenizer.token.*;
+import javapoets.tokenizer.stream.TokenStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,21 +11,120 @@ public class Parser {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Parser.class);
 
-    private final TokenStream tokens;
+    private final TokenStream tokenStream;
 
-    public Parser(TokenStream tokens) {
-        this.tokens = tokens;
+    public Parser(TokenStream tokenStream) {
+        this.tokenStream = tokenStream;
     }
 
     // ENTRY POINT
     public List<Statement> parseProgram() {
         List<Statement> statements = new ArrayList<>();
 
-        while (!tokens.isAtEnd()) {
+        while (!tokenStream.isAtEnd()) {
             statements.add(parseStatement());
         }
 
         return statements;
+    }
+
+    private Expression parsePrimary() {
+        Expression expr = parseAtom();
+
+        while (true) {
+            if (tokenStream.match(TokenType.PUNCTUATION, "(")) {
+                expr = finishFunctionCall(expr);
+            } else if (tokenStream.match(TokenType.PUNCTUATION, ".")) {
+                String property = tokenStream.expect(TokenType.IDENTIFIER).lexeme();
+                expr = new MemberAccessExpression(expr, property);
+            } else {
+                break;
+            }
+        }
+
+        return expr;
+    }
+    /*
+    private Expression parsePrimary() {
+        Token t = tokenStream.peek();
+
+        switch (t.type()) {
+            case INTEGER_LITERAL -> {
+                tokenStream.consume();
+                //return new LiteralExpression(Integer.parseInt(t.lexeme()));
+                return new AstNode.LiteralExpression(Integer.parseInt(t.lexeme()));
+            }
+            case FLOAT_LITERAL -> {
+                tokenStream.consume();
+                //return new LiteralExpression(Double.parseDouble(t.lexeme()));
+                return new AstNode.LiteralExpression(Double.parseDouble(t.lexeme()));
+            }
+            case STRING_LITERAL -> {
+                tokenStream.consume();
+                //return new LiteralExpression(t.lexeme());
+                return new AstNode.LiteralExpression(t.lexeme());
+            }
+            case IDENTIFIER -> {
+                tokenStream.consume();
+                //return new IdentifierExpression(t.lexeme());
+                return new AstNode.IdentifierExpression(t.lexeme());
+            }
+            case PUNCTUATION -> {
+                if (tokenStream.match(TokenType.PUNCTUATION, "(")) {
+                    Expression expr = parseExpression();
+                    tokenStream.expect(TokenType.PUNCTUATION); // )
+                    return expr;
+                }
+            }
+        }
+        throw new RuntimeException("Unexpected token: " + t);
+    }
+    */
+
+    private Expression parseAtom() {
+        Token t = tokenStream.peek();
+
+        switch (t.type()) {
+            case INTEGER_LITERAL -> {
+                tokenStream.consume();
+                return new AstNode.LiteralExpression(Integer.parseInt(t.lexeme()));
+            }
+            case FLOAT_LITERAL -> {
+                tokenStream.consume();
+                return new AstNode.LiteralExpression(Double.parseDouble(t.lexeme()));
+            }
+            case STRING_LITERAL -> {
+                tokenStream.consume();
+                return new AstNode.LiteralExpression(t.lexeme());
+            }
+            case IDENTIFIER -> {
+                tokenStream.consume();
+                return new AstNode.IdentifierExpression(t.lexeme());
+            }
+            case PUNCTUATION -> {
+                if (tokenStream.match(TokenType.PUNCTUATION, "(")) {
+                    Expression expr = parseExpression();
+                    tokenStream.expect(TokenType.PUNCTUATION, ")");
+                    return expr;
+                }
+            }
+        }
+
+        throw new RuntimeException("Unexpected token: " + t);
+    }
+
+    private Expression finishFunctionCall(Expression callee) {
+        List<Expression> args = new ArrayList<>();
+
+        if (!tokenStream.match(TokenType.PUNCTUATION, ")")) {
+            do {
+                args.add(parseExpression());
+            } while (tokenStream.match(TokenType.PUNCTUATION, ","));
+
+            tokenStream.expect(TokenType.PUNCTUATION, ")");
+        }
+
+        return new FunctionCallExpression(callee, args);
     }
 
     // -------------------------
@@ -33,7 +133,7 @@ public class Parser {
 
     private Statement parseStatement() {
 
-        Token token = tokens.peek();
+        Token token = tokenStream.peek();
 
         log.debug("Parsing statement starting with: {}", token);
 
@@ -45,7 +145,7 @@ public class Parser {
             }
         }
 
-        if (tokens.match(TokenType.PUNCTUATION, "{")) {
+        if (tokenStream.match(TokenType.PUNCTUATION, "{")) {
             return parseBlock();
         }
 
@@ -53,18 +153,18 @@ public class Parser {
     }
 
     private Statement parseVariableDeclaration() {
-        String keyword = tokens.consume().lexeme();
+        String keyword = tokenStream.consume().lexeme();
 
-        Token nameToken = tokens.expect(TokenType.IDENTIFIER);
+        Token nameToken = tokenStream.expect(TokenType.IDENTIFIER);
         String name = nameToken.lexeme();
 
         Expression initializer = null;
 
-        if (tokens.match(TokenType.OPERATOR, "=")) {
+        if (tokenStream.match(TokenType.OPERATOR, "=")) {
             initializer = parseExpression();
         }
 
-        tokens.expect(TokenType.PUNCTUATION); // ;
+        tokenStream.expect(TokenType.PUNCTUATION); // ;
 
         return new VariableDeclaration(keyword, name, initializer);
     }
@@ -72,7 +172,7 @@ public class Parser {
     private Statement parseBlock() {
         List<Statement> statements = new ArrayList<>();
 
-        while (!tokens.match(TokenType.PUNCTUATION, "}")) {
+        while (!tokenStream.match(TokenType.PUNCTUATION, "}")) {
             statements.add(parseStatement());
         }
 
@@ -81,7 +181,7 @@ public class Parser {
 
     private Statement parseExpressionStatement() {
         Expression expr = parseExpression();
-        tokens.expect(TokenType.PUNCTUATION); // ;
+        tokenStream.expect(TokenType.PUNCTUATION); // ;
 
         return new ExpressionStatement(expr);
     }
@@ -91,7 +191,8 @@ public class Parser {
     // -------------------------
 
     private Expression parseExpression() {
-        return parseBinaryExpression(0);
+        //return parseBinaryExpression(0);
+        return parseAssignmentExpression();
     }
 
     // Operator precedence table
@@ -107,18 +208,51 @@ public class Parser {
         };
     }
 
+    private Expression parseAssignmentExpression() {
+
+        Expression left = parseBinaryExpression(0);
+        log.debug("Parsing assignment candidate starting with: {}", left);
+
+        Token token = tokenStream.peek();
+        if (token.type() == TokenType.OPERATOR && isAssignmentOperator(token.lexeme())) {
+            String operator = tokenStream.consume().lexeme();
+            log.debug("Assignment operator detected: {}", operator);
+
+            if (!isAssignable(left)) {
+                throw new RuntimeException("Invalid assignment target: " + left);
+            }
+
+            Expression right = parseAssignmentExpression(); // right-associative
+            return new AssignmentExpression(left, operator, right);
+        }
+
+        return left;
+    }
+
+    private boolean isAssignmentOperator(String lexeme) {
+        return switch (lexeme) {
+            case "=", "+=", "-=", "*=", "/=", "%=" -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isAssignable(Expression expr) {
+        return expr instanceof AstNode.IdentifierExpression
+            || expr instanceof MemberAccessExpression;
+    }
+
     private Expression parseBinaryExpression(int minPrecedence) {
         Expression left = parsePrimary();
 
         while (true) {
-            Token opToken = tokens.peek();
+            Token opToken = tokenStream.peek();
 
             if (opToken.type() != TokenType.OPERATOR) break;
 
             int precedence = getPrecedence(opToken.lexeme());
             if (precedence < minPrecedence) break;
 
-            String operator = tokens.consume().lexeme();
+            String operator = tokenStream.consume().lexeme();
 
             Expression right = parseBinaryExpression(precedence + 1);
 
@@ -129,39 +263,4 @@ public class Parser {
         return left;
     }
 
-    private Expression parsePrimary() {
-        Token t = tokens.peek();
-
-        switch (t.type()) {
-            case INTEGER_LITERAL -> {
-                tokens.consume();
-                //return new LiteralExpression(Integer.parseInt(t.lexeme()));
-                return new AstNode.LiteralExpression(Integer.parseInt(t.lexeme()));
-            }
-            case FLOAT_LITERAL -> {
-                tokens.consume();
-                //return new LiteralExpression(Double.parseDouble(t.lexeme()));
-                return new AstNode.LiteralExpression(Double.parseDouble(t.lexeme()));
-            }
-            case STRING_LITERAL -> {
-                tokens.consume();
-                //return new LiteralExpression(t.lexeme());
-                return new AstNode.LiteralExpression(t.lexeme());
-            }
-            case IDENTIFIER -> {
-                tokens.consume();
-                //return new IdentifierExpression(t.lexeme());
-                return new AstNode.IdentifierExpression(t.lexeme());
-            }
-            case PUNCTUATION -> {
-                if (tokens.match(TokenType.PUNCTUATION, "(")) {
-                    Expression expr = parseExpression();
-                    tokens.expect(TokenType.PUNCTUATION); // )
-                    return expr;
-                }
-            }
-        }
-
-        throw new RuntimeException("Unexpected token: " + t);
-    }
 }

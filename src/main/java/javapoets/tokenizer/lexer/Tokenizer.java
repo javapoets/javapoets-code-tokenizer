@@ -1,8 +1,13 @@
-package javapoets.tokenizer.core;
+package javapoets.tokenizer.lexer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+
+//import javapoets.tokenizer.core.*;
+import javapoets.tokenizer.token.Token;
+import javapoets.tokenizer.token.TokenType;
+import javapoets.tokenizer.language.LanguageDefinition;
 
 public final class Tokenizer {
 
@@ -38,10 +43,8 @@ public final class Tokenizer {
         while (!charReader.isAtEnd()) {
 
             Token token = nextToken(charReader);
-            //Token token = tryReadRegex(charReader);
             //log.debug("token = '{}'", token);
-            //if (regex != null) return regex;
-            log.info("Token: {} '{}'", token.type(), token.lexeme());
+            //log.info("Token: {} '{}'", token.type(), token.lexeme());
             //log.debug(token.toString());
 
             if (token != null) {
@@ -104,7 +107,7 @@ public final class Tokenizer {
     private Token nextToken(CharReader charReader) {
         //log.trace("nextToken(charReader)");
 
-        log.info("Reading next token at position {}", charReader.position());
+        //log.info("Reading next token at position {}", charReader.position());
 
         char ch = charReader.peek();
 

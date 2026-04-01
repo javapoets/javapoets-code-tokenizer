@@ -1,7 +1,7 @@
 package javapoets.tokenizer.debug;
 
 import java.util.List;
-import javapoets.tokenizer.core.Token;
+import javapoets.tokenizer.token.Token;
 
 public class TokenPrinter {
     public static void print(List<Token> tokens) {

@@ -1,4 +1,4 @@
-package javapoets.tokenizer.core;
+package javapoets.tokenizer.lexer;
 
 import java.util.HashMap;
 import java.util.Map;

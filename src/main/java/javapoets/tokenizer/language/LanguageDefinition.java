@@ -1,4 +1,4 @@
-package javapoets.tokenizer.core;
+package javapoets.tokenizer.language;
 
 import java.util.Set;
 import java.util.List;

@@ -2,7 +2,7 @@ package javapoets.tokenizer.language;
 
 import java.util.List;
 import java.util.Set;
-import javapoets.tokenizer.core.*;
+//import javapoets.tokenizer.core.*;
 
 public final class JavascriptLanguageDefinition extends AbstractLanguageDefinition {
 

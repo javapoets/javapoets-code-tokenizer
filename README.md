@@ -1,6 +1,16 @@
 # Javapoets Code Tokenizer
 
-A production-grade, extensible tokenizer and parser framework for Java and JavaScript, written in Java.
+A production-grade language processing and transformation engine.
+
+Features:
+- Tokenizer (lexer)
+- Parser (AST generation)
+- Visitor-based transformations
+- Optimization pipeline (constant folding, dead code elimination)
+- Obfuscation engine (scope-aware renaming)
+- Minifier
+
+This project serves as the core engine for [Obfusgator](https://Obfusgator.com).
 
 ---
 
@@ -27,6 +37,33 @@ This project emphasizes **clean architecture**, **extensibility**, and **product
 * Recursive descent parser with operator precedence
 * Extensible AST model
 * Clean separation of concerns (lexer, parser, AST)
+
+### Language Features Supported
+
+- [x] Variables
+- [x] Assignments
+- [x] Functions
+- [x] Function calls
+- [x] Member access
+- [x] Return Statements
+- [x] If / else
+- [x] Comparison operators
+- [x] Nested scopes
+- [x] Obfuscation
+- [x] Control Flow
+- [x] Optimization
+
+AST
+ ├── Control Flow (structure)
+ │     ├── if / else
+ │     ├── while
+ │     └── blocks
+ │
+ └── Optimization (transformations)
+       ├── Constant Folding
+       ├── Dead Code Elimination
+       ├── Simplification
+       └── Minification
 
 ---
 
@@ -135,8 +172,15 @@ VariableDeclaration
 ```
 $ gradle test
 # gradle test --info
+$ gradle test --tests JavascriptTokenizerTest
+$ gradle test --tests JavascriptTokenizerTest.should_tokenize_function_keywords_and_identifiers
+$ gradle test --tests JavascriptTokenizerTest.should_tokenize_simple_js_function
+$ gradle test --tests ObfuscationVisitorTest
+$ gradle test --tests EndToEndJavascriptTest
+
 $ gradle test --tests "javapoets.tokenizer.test.JavaTokenizerTest"
 $ gradle test --tests "*JavaTokenizerTest"
+$ gradle test --tests "javapoets.tokenizer.test.JavascriptPrettyPrintTokenizerTest"
 $ gradle test --tests "javapoets.tokenizer.test.JavascriptPrettyPrintTokenizerTest"
 ```
 
@@ -152,7 +196,9 @@ $ gradle clean test --rerun-tasks --info
 
 ```
 $ ./gradlew run -PmainClass=javapoets.tokenizer.demo.ParserDemo
-$ ./gradlew run -PmainClass=javapoets.tokenizer.demo.ObfuscationVistitorDemo
+$ ./gradlew run -PmainClass=javapoets.tokenizer.demo.JavaTokenizerDemo
+$ ./gradlew run -PmainClass=javapoets.tokenizer.demo.JavascriptTokenizerDemo
+$ ./gradlew run -PmainClass=javapoets.tokenizer.demo.ObfuscationVisitorDemo
 ```
 
 ---

@@ -1,4 +1,4 @@
-package javapoets.tokenizer.core;
+package javapoets.tokenizer.token;
 
 public enum TokenType {
     

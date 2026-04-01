@@ -1,6 +1,7 @@
-package javapoets.tokenizer.core;
+package javapoets.tokenizer.stream;
 
 import java.util.List;
+import javapoets.tokenizer.token.*;
 
 public final class TokenStream {
 
@@ -52,6 +53,23 @@ public final class TokenStream {
             );
         }
         return consume();
+    }
+
+    public Token expect(TokenType type, String lexeme) {
+        Token t = peek();
+
+        if (t.type() != type || !t.lexeme().equals(lexeme)) {
+            throw new RuntimeException(
+                "Expected " + type + " '" + lexeme + "' but found "
+                + t.type() + " ('" + t.lexeme() + "')"
+            );
+        }
+
+        return consume();
+    }
+
+    public Token expectKeyword(String keyword) {
+        return expect(TokenType.KEYWORD, keyword);
     }
 
     public boolean isAtEnd() {

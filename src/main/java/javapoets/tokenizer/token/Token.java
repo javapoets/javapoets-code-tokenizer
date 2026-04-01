@@ -1,4 +1,6 @@
-package javapoets.tokenizer.core;
+package javapoets.tokenizer.token;
+
+import javapoets.tokenizer.lexer.*;
 
 public record Token(
       TokenType type
