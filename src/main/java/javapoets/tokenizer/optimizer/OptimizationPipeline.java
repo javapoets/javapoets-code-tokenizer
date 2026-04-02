@@ -25,7 +25,6 @@ public class OptimizationPipeline {
             log.debug("Running optimization pass: {}", pass.name());
             current = pass.apply(current);
         }
-
         return current;
     }
 }

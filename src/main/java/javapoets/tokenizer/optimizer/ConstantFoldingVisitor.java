@@ -4,10 +4,22 @@ import javapoets.tokenizer.ast.*;
 
 public class ConstantFoldingVisitor implements AstVisitor<AstNode> {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ConstantFoldingVisitor.class);
+
     // -------------------
     // EXPRESSIONS
     // -------------------
 
+    @Override
+    public AstNode visitBooleanLiteralExpression(BooleanLiteralExpression expr) {
+        return expr;
+    }
+
+    @Override
+    public AstNode visitEmptyStatement(EmptyStatement stmt) {
+        return stmt;
+    }
+    
     @Override
     public AstNode visitLiteral(AstNode.LiteralExpression node) {
         return node;
@@ -24,11 +36,21 @@ public class ConstantFoldingVisitor implements AstVisitor<AstNode> {
         Expression left = (Expression) node.left().accept(this);
         Expression right = (Expression) node.right().accept(this);
 
-        // 🔥 CONSTANT FOLDING
+        // Constant Folding
         if (left instanceof AstNode.LiteralExpression l && right instanceof AstNode.LiteralExpression r) {
+
             Object result = fold(l.value(), node.operator(), r.value());
+            log.debug("FOLD result = {} ({})", result, result.getClass());
 
             if (result != null) {
+
+                if (result instanceof Double d) {
+                    // safer integer check
+                    if (Math.floor(d) == d) {
+                        return new AstNode.LiteralExpression((int) d.doubleValue());
+                    }
+                }
+
                 return new AstNode.LiteralExpression(result);
             }
         }
@@ -70,12 +92,12 @@ public class ConstantFoldingVisitor implements AstVisitor<AstNode> {
 
     @Override
     public AstNode visitVariableDeclaration(VariableDeclaration node) {
+        log.trace("visitVariableDeclaration(VariableDeclaration node)");
+        
         Expression init = null;
-
         if (node.initializer() != null) {
             init = (Expression) node.initializer().accept(this);
         }
-
         return new VariableDeclaration(node.keyword(), node.name(), init);
     }
 
@@ -87,7 +109,7 @@ public class ConstantFoldingVisitor implements AstVisitor<AstNode> {
     }
 
     @Override
-    public AstNode visitBlock(BlockStatement node) {
+    public AstNode visitBlockStatement(BlockStatement node) {
         var statements = node.statements().stream()
             .map(stmt -> (Statement) stmt.accept(this))
             .toList();
@@ -97,7 +119,7 @@ public class ConstantFoldingVisitor implements AstVisitor<AstNode> {
 
     // 🔥 DEAD CODE ELIMINATION (simple)
     @Override
-    public AstNode visitIf(IfStatement node) {
+    public AstNode visitIfStatement(IfStatement node) {
 
         Expression condition = (Expression) node.condition().accept(this);
 

@@ -13,6 +13,16 @@ public class ObfuscationVisitor implements AstVisitor<AstNode> {
         scopes.push(); // global scope
     }
 
+    @Override
+    public AstNode visitBooleanLiteralExpression(BooleanLiteralExpression expr) {
+        return expr;
+    }
+
+    @Override
+    public AstNode visitEmptyStatement(EmptyStatement stmt) {
+        return stmt;
+    }
+    
     // -------------------
     // HELPERS
     // -------------------
@@ -68,6 +78,7 @@ public class ObfuscationVisitor implements AstVisitor<AstNode> {
 
     @Override
     public AstNode visitVariableDeclaration(VariableDeclaration node) {
+        log.trace("visitVariableDeclaration(VariableDeclaration node)");
 
         String newName = declare(node.name());
         //String newName = obfuscateName(node.name());
@@ -92,7 +103,7 @@ public class ObfuscationVisitor implements AstVisitor<AstNode> {
     }
 
     @Override
-    public AstNode visitBlock(BlockStatement node) {
+    public AstNode visitBlockStatement(BlockStatement node) {
 
         log.debug("Entering new scope");
         scopes.push();
@@ -159,7 +170,7 @@ public class ObfuscationVisitor implements AstVisitor<AstNode> {
     }
 
     @Override
-    public AstNode visitIf(IfStatement node) {
+    public AstNode visitIfStatement(IfStatement node) {
 
         Expression condition = (Expression) node.condition().accept(this);
         Statement thenBranch = (Statement) node.thenBranch().accept(this);

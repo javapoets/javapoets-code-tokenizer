@@ -7,6 +7,18 @@ import java.util.List;
 
 public class DeadCodeEliminationVisitor implements AstVisitor<AstNode> {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DeadCodeEliminationVisitor.class);
+
+    @Override
+    public AstNode visitBooleanLiteralExpression(BooleanLiteralExpression expr) {
+        return expr;
+    }
+
+    @Override
+    public AstNode visitEmptyStatement(EmptyStatement stmt) {
+        return stmt;
+    }
+    
     @Override
     public AstNode visitLiteral(AstNode.LiteralExpression node) {
         return node;
@@ -55,6 +67,8 @@ public class DeadCodeEliminationVisitor implements AstVisitor<AstNode> {
 
     @Override
     public AstNode visitVariableDeclaration(VariableDeclaration node) {
+        log.trace("visitVariableDeclaration(VariableDeclaration node)");
+        
         return new VariableDeclaration(
             node.keyword(),
             node.name(),
@@ -68,7 +82,7 @@ public class DeadCodeEliminationVisitor implements AstVisitor<AstNode> {
     }
 
     @Override
-    public AstNode visitBlock(BlockStatement node) {
+    public AstNode visitBlockStatement(BlockStatement node) {
         List<Statement> optimized = new ArrayList<>();
 
         for (Statement stmt : node.statements()) {
@@ -100,6 +114,7 @@ public class DeadCodeEliminationVisitor implements AstVisitor<AstNode> {
             : new ReturnStatement((Expression) node.expression().accept(this));
     }
 
+    /*
     @Override
     public AstNode visitIf(IfStatement node) {
         Expression condition = (Expression) node.condition().accept(this);
@@ -117,6 +132,32 @@ public class DeadCodeEliminationVisitor implements AstVisitor<AstNode> {
         Statement elseBranch = node.elseBranch() == null
             ? null
             : (Statement) node.elseBranch().accept(this);
+
+        return new IfStatement(condition, thenBranch, elseBranch);
+    }
+    */
+    @Override
+    public AstNode visitIfStatement(IfStatement stmt) {
+
+        Expression condition = (Expression) stmt.condition().accept(this);
+        Statement thenBranch = (Statement) stmt.thenBranch().accept(this);
+
+        Statement elseBranch = null;
+        if (stmt.elseBranch() != null) {
+            elseBranch = (Statement) stmt.elseBranch().accept(this);
+        }
+
+        log.debug("DCE: condition = {}", condition.getClass());
+
+        // 🔥 THIS is the key logic
+        if (condition instanceof BooleanLiteralExpression bool) {
+
+            if (bool.value()) {
+                return thenBranch; // eliminate IF
+            } else {
+                return elseBranch != null ? elseBranch : new EmptyStatement();
+            }
+        }
 
         return new IfStatement(condition, thenBranch, elseBranch);
     }

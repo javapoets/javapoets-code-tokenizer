@@ -4,6 +4,18 @@ import javapoets.tokenizer.ast.*;
 
 public class MinifyPrinterVisitor implements AstVisitor<String> {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MinifyPrinterVisitor.class);
+
+    @Override
+    public String visitBooleanLiteralExpression(BooleanLiteralExpression expr) {
+        return expr.value() ? "true" : "false";
+    }
+
+    @Override
+    public String visitEmptyStatement(EmptyStatement stmt) {
+        return "";
+    }
+    
     @Override
     public String visitLiteral(AstNode.LiteralExpression node) {
         return String.valueOf(node.value());
@@ -41,6 +53,8 @@ public class MinifyPrinterVisitor implements AstVisitor<String> {
 
     @Override
     public String visitVariableDeclaration(VariableDeclaration node) {
+        log.trace("visitVariableDeclaration(VariableDeclaration node)");
+
         StringBuilder sb = new StringBuilder();
         sb.append(node.keyword()).append(" ").append(node.name());
         if (node.initializer() != null) {
@@ -56,7 +70,7 @@ public class MinifyPrinterVisitor implements AstVisitor<String> {
     }
 
     @Override
-    public String visitBlock(BlockStatement node) {
+    public String visitBlockStatement(BlockStatement node) {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         for (Statement stmt : node.statements()) {
@@ -81,7 +95,7 @@ public class MinifyPrinterVisitor implements AstVisitor<String> {
     }
 
     @Override
-    public String visitIf(IfStatement node) {
+    public String visitIfStatement(IfStatement node) {
         StringBuilder sb = new StringBuilder();
         sb.append("if(").append(node.condition().accept(this)).append(")");
         sb.append(node.thenBranch().accept(this));

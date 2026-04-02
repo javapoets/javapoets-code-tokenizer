@@ -8,6 +8,7 @@ public enum TokenType {
     , INTEGER_LITERAL
     , FLOAT_LITERAL
     , STRING_LITERAL
+    //, TEMPLATE_LITERAL
     , CHAR_LITERAL
     , BOOLEAN_LITERAL
     , NULL_LITERAL

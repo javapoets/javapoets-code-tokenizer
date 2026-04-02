@@ -8,6 +8,6 @@ public record IfStatement(
 
     @Override
     public <R> R accept(AstVisitor<R> visitor) {
-        return visitor.visitIf(this);
+        return visitor.visitIfStatement(this);
     }
 }

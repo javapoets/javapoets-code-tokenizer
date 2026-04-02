@@ -45,4 +45,17 @@ public record Token(
         );
     }
 
+    /*
+    public SourcePosition position() {
+        return start;
+    }
+    */
+
+    public String position() {
+        return start.toString();
+    }
+
+    public String span() {
+        return start + " -> " + end;
+    }
 }

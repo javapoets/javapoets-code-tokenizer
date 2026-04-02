@@ -109,10 +109,10 @@ public final class Tokenizer {
 
         //log.info("Reading next token at position {}", charReader.position());
 
-        char ch = charReader.peek();
+        char currentChar = charReader.peek();
 
         // 1. whitespace
-        if (Character.isWhitespace(ch)) {
+        if (Character.isWhitespace(currentChar)) {
             return readWhitespace(charReader);
         }
 
@@ -125,17 +125,21 @@ public final class Tokenizer {
         if (regex != null) return regex;
 
         // 4. identifier / keyword
-        if (languageDefinition.isIdentifierStart(ch)) {
+        if (languageDefinition.isIdentifierStart(currentChar)) {
             return readIdentifierOrKeyword(charReader);
         }
 
         // 5. number
-        if (Character.isDigit(ch)) {
+        if (Character.isDigit(currentChar)) {
             return readNumber(charReader);
         }
 
         // 6. string
-        if (ch == '"' || ch == '\'' || ch == '`') {
+        if (currentChar == '"' || currentChar == '\'' || currentChar == '`') {
+
+            // Future template literals support
+            //if (currentChar == '`') return readTemplateLiteral();
+
             return readStringLike(charReader);
         }
 
@@ -144,7 +148,7 @@ public final class Tokenizer {
         if (op != null) return op;
 
         // 8. punctuation
-        if (languageDefinition.punctuation().contains(ch)) {
+        if (languageDefinition.punctuation().contains(currentChar)) {
             return readPunctuation(charReader);
         }
 
@@ -316,6 +320,43 @@ public final class Tokenizer {
             , TokenChannel.DEFAULT
         );
     }
+
+    /*
+     * Future template literal support
+     * https://chatgpt.com/c/69bd0a1b-854c-832f-8e65-917ac5bccd99
+     */
+    /*
+    private Token readTemplateLiteral() {
+        int startLine = line;
+        int startColumn = column;
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(advance()); // consume opening backtick
+
+        boolean escaped = false;
+
+        while (!isAtEnd()) {
+            char c = advance();
+            sb.append(c);
+
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\') {
+                escaped = true;
+                continue;
+            }
+
+            if (c == '`') {
+                return token(TokenType.STRING_LITERAL, sb.toString(), startLine, startColumn);
+            }
+        }
+
+        return token(TokenType.UNKNOWN, sb.toString(), startLine, startColumn);
+    }
+    */
 
     /*
     private Token tryReadOperator_V1(CharReader charReader) {

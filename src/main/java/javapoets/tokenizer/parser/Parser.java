@@ -14,14 +14,94 @@ public class Parser {
     private final TokenStream tokenStream;
 
     public Parser(TokenStream tokenStream) {
+        log.trace("(tokenStream)");
         this.tokenStream = tokenStream;
+    }
+
+    private Token peek() {
+        return tokenStream.peek(); // must return EOF token at end
+    }
+
+    private Token previous() {
+        return tokenStream.previous();
+    }
+
+    private boolean isAtEnd() {
+        return peek().type() == TokenType.EOF;
+    }
+
+    private Token advance() {
+        if (!isAtEnd()) {
+            tokenStream.advance();
+        }
+        return previous();
+    }
+
+    private boolean check(TokenType type) {
+        if (isAtEnd()) return false;
+        return peek().type() == type;
+    }
+
+    private boolean check(TokenType type, String lexeme) {
+        if (isAtEnd()) return false;
+        Token token = peek();
+        return token.type() == type && token.lexeme().equals(lexeme);
+    }
+
+    private boolean match(TokenType... types) {
+        for (TokenType type : types) {
+            if (check(type)) {
+                advance();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean match(TokenType type, String lexeme) {
+        if (check(type, lexeme)) {
+            advance();
+            return true;
+        }
+        return false;
+    }
+
+    private Token consume() {
+        return tokenStream.consume();
+    }
+
+    private Token consume(TokenType tokenType, String message) {
+        //log.debug("consume(tokenType, message)");
+        log.debug("consume({}, '{}')", tokenType, message);
+
+        if (check(tokenType)) return advance();
+
+        throw error(peek(), message);
+    }
+
+    private Token consume(TokenType tokenType, String lexeme, String message) {
+        log.debug("consume({}, {}, '{}')", lexeme, tokenType, message);
+
+        if (check(tokenType, lexeme)) return advance();
+
+        throw error(peek(), message + " Expected '" + lexeme + "'");
+    }
+
+    private RuntimeException error(Token token, String message) {
+        return new RuntimeException(
+            "[Parse Error] " + message +
+            " at " + token.position() +
+            " near '" + token.lexeme() + "'"
+        );
     }
 
     // ENTRY POINT
     public List<Statement> parseProgram() {
+        log.trace("parseProgram()");
         List<Statement> statements = new ArrayList<>();
 
-        while (!tokenStream.isAtEnd()) {
+        //while (!tokenStream.isAtEnd()) {
+        while (!isAtEnd()) {
             statements.add(parseStatement());
         }
 
@@ -29,13 +109,18 @@ public class Parser {
     }
 
     private Expression parsePrimary() {
+        log.trace("parsePrimary()");
+
         Expression expr = parseAtom();
 
         while (true) {
-            if (tokenStream.match(TokenType.PUNCTUATION, "(")) {
+            //if (tokenStream.match(TokenType.PUNCTUATION, "(")) {
+            if (match(TokenType.PUNCTUATION, "(")) {
                 expr = finishFunctionCall(expr);
-            } else if (tokenStream.match(TokenType.PUNCTUATION, ".")) {
+            //} else if (tokenStream.match(TokenType.PUNCTUATION, ".")) {
+            } else if (match(TokenType.PUNCTUATION, ".")) {
                 String property = tokenStream.expect(TokenType.IDENTIFIER).lexeme();
+                //String property = expect(TokenType.IDENTIFIER).lexeme();
                 expr = new MemberAccessExpression(expr, property);
             } else {
                 break;
@@ -82,46 +167,64 @@ public class Parser {
     */
 
     private Expression parseAtom() {
-        Token t = tokenStream.peek();
+        log.trace("parseAtom()");
 
-        switch (t.type()) {
+        //Token token = tokenStream.peek();
+        Token token = peek();
+
+        // Defensive guard - parseAtom() should NEVER see }
+        if (check(TokenType.PUNCTUATION, "}")) {
+            throw error(peek(), "Unexpected block terminator");
+        }
+
+        // BOOLEAN LITERAL
+        if (match(TokenType.BOOLEAN_LITERAL)) {
+            return new BooleanLiteralExpression(
+                //Boolean.parseBoolean(token.lexeme()) // subtle bug: match() advances but we're using the token from peek()
+                Boolean.parseBoolean(tokenStream.previous().lexeme())
+            );
+        }
+
+        switch (token.type()) {
             case INTEGER_LITERAL -> {
-                tokenStream.consume();
-                return new AstNode.LiteralExpression(Integer.parseInt(t.lexeme()));
+                consume();
+                return new AstNode.LiteralExpression(Integer.parseInt(token.lexeme()));
             }
             case FLOAT_LITERAL -> {
-                tokenStream.consume();
-                return new AstNode.LiteralExpression(Double.parseDouble(t.lexeme()));
+                consume();
+                return new AstNode.LiteralExpression(Double.parseDouble(token.lexeme()));
             }
             case STRING_LITERAL -> {
-                tokenStream.consume();
-                return new AstNode.LiteralExpression(t.lexeme());
+                consume();
+                return new AstNode.LiteralExpression(token.lexeme());
             }
             case IDENTIFIER -> {
-                tokenStream.consume();
-                return new AstNode.IdentifierExpression(t.lexeme());
+                consume();
+                return new AstNode.IdentifierExpression(token.lexeme());
             }
             case PUNCTUATION -> {
-                if (tokenStream.match(TokenType.PUNCTUATION, "(")) {
+                if (match(TokenType.PUNCTUATION, "(")) {
                     Expression expr = parseExpression();
                     tokenStream.expect(TokenType.PUNCTUATION, ")");
+                    //expect(TokenType.PUNCTUATION, ")");
                     return expr;
                 }
             }
         }
 
-        throw new RuntimeException("Unexpected token: " + t);
+        throw new RuntimeException("Unexpected token: " + token);
     }
 
     private Expression finishFunctionCall(Expression callee) {
         List<Expression> args = new ArrayList<>();
 
-        if (!tokenStream.match(TokenType.PUNCTUATION, ")")) {
+        if (!match(TokenType.PUNCTUATION, ")")) {
             do {
                 args.add(parseExpression());
-            } while (tokenStream.match(TokenType.PUNCTUATION, ","));
+            } while (match(TokenType.PUNCTUATION, ","));
 
             tokenStream.expect(TokenType.PUNCTUATION, ")");
+            //expect(TokenType.PUNCTUATION, ")");
         }
 
         return new FunctionCallExpression(callee, args);
@@ -132,24 +235,76 @@ public class Parser {
     // -------------------------
 
     private Statement parseStatement() {
+        log.trace("parseStatement()");
 
-        Token token = tokenStream.peek();
-
+        //Token token = tokenStream.peek();
+        Token token = peek();
         log.debug("Parsing statement starting with: {}", token);
+        log.trace("token.type() = " + token.type());
+
+        log.trace("check(TokenType.KEYWORD, \"if\") = " + (check(TokenType.KEYWORD, "if")));
+
+        if (check(TokenType.KEYWORD, "if")) {
+            log.trace("check(TokenType.KEYWORD, \"if\") = true");
+            advance(); // consume the 'if'
+            return parseIfStatement();
+        }
+
+        if (check(TokenType.KEYWORD, "else")) {
+            throw error(peek(), "Unexpected 'else' without matching 'if'");
+        }
 
         if (token.type() == TokenType.KEYWORD) {
-            String kw = token.lexeme();
-
-            if (kw.equals("int") || kw.equals("let") || kw.equals("const") || kw.equals("var")) {
+            String keyword = token.lexeme();
+            if (keyword.equals("int") || keyword.equals("let") || keyword.equals("const") || keyword.equals("var")) {
                 return parseVariableDeclaration();
             }
         }
 
-        if (tokenStream.match(TokenType.PUNCTUATION, "{")) {
+        if (match(TokenType.PUNCTUATION, "{")) {
             return parseBlock();
         }
 
         return parseExpressionStatement();
+    }
+
+    /*
+    private Statement parseIfStatement() {
+
+        consume(TokenType.PUNCTUATION, "(");
+
+        Expression condition = parseExpression();
+
+        consume(TokenType.PUNCTUATION, ")");
+
+        Statement thenBranch = parseStatement();
+
+        Statement elseBranch = null;
+        if (match(TokenType.KEYWORD, "else")) {
+        //if (tokenStream.match(TokenType.KEYWORD, "else")) {
+            elseBranch = parseStatement();
+        }
+
+        return new IfStatement(condition, thenBranch, elseBranch);
+    }
+    */
+    private Statement parseIfStatement() {
+        consume(TokenType.PUNCTUATION, "(", "Expected '(' after 'if'");
+
+        Expression condition = parseExpression();
+
+        consume(TokenType.PUNCTUATION, ")", "Expected ')' after condition");
+
+        // Parse THEN branch
+        Statement thenBranch = parseStatement();
+
+        // Immediately check for ELSE
+        Statement elseBranch = null;
+        if (match(TokenType.KEYWORD, "else")) {
+            elseBranch = parseStatement();
+        }
+
+        return new IfStatement(condition, thenBranch, elseBranch);
     }
 
     private Statement parseVariableDeclaration() {
@@ -169,6 +324,7 @@ public class Parser {
         return new VariableDeclaration(keyword, name, initializer);
     }
 
+    /*
     private Statement parseBlock() {
         List<Statement> statements = new ArrayList<>();
 
@@ -178,8 +334,27 @@ public class Parser {
 
         return new BlockStatement(statements);
     }
+    */
+    private Statement parseBlock() {
+        log.trace("parseBlock()");
+
+        List<Statement> statements = new ArrayList<>();
+
+        while (
+            !check(TokenType.PUNCTUATION, "}") &&
+            !isAtEnd()
+        ) {
+            statements.add(parseStatement());
+        }
+
+        consume(TokenType.PUNCTUATION, "}", "Expected '}' after block");
+
+        return new BlockStatement(statements);
+    }
 
     private Statement parseExpressionStatement() {
+        log.trace("parseExpressionStatement()");
+
         Expression expr = parseExpression();
         tokenStream.expect(TokenType.PUNCTUATION); // ;
 
@@ -191,6 +366,8 @@ public class Parser {
     // -------------------------
 
     private Expression parseExpression() {
+        log.trace("parseExpression()");
+
         //return parseBinaryExpression(0);
         return parseAssignmentExpression();
     }
@@ -209,6 +386,7 @@ public class Parser {
     }
 
     private Expression parseAssignmentExpression() {
+        log.trace("parseAssignmentExpression()");
 
         Expression left = parseBinaryExpression(0);
         log.debug("Parsing assignment candidate starting with: {}", left);

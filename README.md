@@ -177,6 +177,8 @@ $ gradle test --tests JavascriptTokenizerTest.should_tokenize_function_keywords_
 $ gradle test --tests JavascriptTokenizerTest.should_tokenize_simple_js_function
 $ gradle test --tests ObfuscationVisitorTest
 $ gradle test --tests EndToEndJavascriptTest
+$ gradle test --tests JavascriptParserTest
+$ gradle test --tests JavascriptParserTest.should_parse_boolean_literal
 
 $ gradle test --tests "javapoets.tokenizer.test.JavaTokenizerTest"
 $ gradle test --tests "*JavaTokenizerTest"

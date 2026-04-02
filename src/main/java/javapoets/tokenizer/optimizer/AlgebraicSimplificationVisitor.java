@@ -4,6 +4,18 @@ import javapoets.tokenizer.ast.*;
 
 public class AlgebraicSimplificationVisitor implements AstVisitor<AstNode> {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AlgebraicSimplificationVisitor.class);
+
+    @Override
+    public AstNode visitBooleanLiteralExpression(BooleanLiteralExpression expr) {
+        return expr;
+    }
+
+    @Override
+    public AstNode visitEmptyStatement(EmptyStatement stmt) {
+        return stmt;
+    }
+    
     @Override
     public AstNode visitLiteral(AstNode.LiteralExpression node) {
         return node;
@@ -70,6 +82,7 @@ public class AlgebraicSimplificationVisitor implements AstVisitor<AstNode> {
 
     @Override
     public AstNode visitVariableDeclaration(VariableDeclaration node) {
+        log.trace("visitVariableDeclaration(VariableDeclaration node)");
         return new VariableDeclaration(
             node.keyword(),
             node.name(),
@@ -83,7 +96,7 @@ public class AlgebraicSimplificationVisitor implements AstVisitor<AstNode> {
     }
 
     @Override
-    public AstNode visitBlock(BlockStatement node) {
+    public AstNode visitBlockStatement(BlockStatement node) {
         return new BlockStatement(
             node.statements().stream()
                 .map(stmt -> (Statement) stmt.accept(this))
@@ -108,7 +121,7 @@ public class AlgebraicSimplificationVisitor implements AstVisitor<AstNode> {
     }
 
     @Override
-    public AstNode visitIf(IfStatement node) {
+    public AstNode visitIfStatement(IfStatement node) {
         return new IfStatement(
             (Expression) node.condition().accept(this),
             (Statement) node.thenBranch().accept(this),

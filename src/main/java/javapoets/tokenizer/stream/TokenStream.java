@@ -24,6 +24,39 @@ public final class TokenStream {
         return tokens.get(index);
     }
 
+    /*
+    // Look at current token
+    public Token peek() {
+        if (position >= tokens.size()) {
+            return tokens.get(tokens.size() - 1); // EOF safety
+        }
+        return tokens.get(position);
+    }
+    */
+
+    // Previous token
+    public Token previous() {
+        if (position == 0) {
+            return tokens.get(0);
+        }
+        return tokens.get(position - 1);
+    }
+
+    // Advance cursor
+    public Token advance() {
+        if (!isAtEnd()) position++;
+        return previous();
+    }
+
+    // EOF check
+    public boolean isAtEnd() {
+        return peek().type() == TokenType.EOF;
+    }
+
+    public int position() {
+        return position;
+    }
+
     public boolean match(TokenType type) {
         if (peek().type() == type) {
             consume();
@@ -72,11 +105,4 @@ public final class TokenStream {
         return expect(TokenType.KEYWORD, keyword);
     }
 
-    public boolean isAtEnd() {
-        return peek().type() == TokenType.EOF;
-    }
-
-    public int position() {
-        return position;
-    }
 }

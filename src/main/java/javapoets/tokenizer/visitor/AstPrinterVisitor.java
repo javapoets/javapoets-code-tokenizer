@@ -4,8 +4,20 @@ import javapoets.tokenizer.ast.*;
 
 public class AstPrinterVisitor implements AstVisitor<String> {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AstPrinterVisitor.class);
+
     private int indentLevel = 0;
 
+    @Override
+    public String visitBooleanLiteralExpression(BooleanLiteralExpression expr) {
+        return "(bool " + expr.value() + ")";
+    }
+
+    @Override
+    public String visitEmptyStatement(EmptyStatement stmt) {
+        return "";
+    }
+    
     private String indent() {
         return "  ".repeat(indentLevel);
     }
@@ -107,10 +119,10 @@ public class AstPrinterVisitor implements AstVisitor<String> {
 
     @Override
     public String visitVariableDeclaration(VariableDeclaration node) {
+        log.trace("visitVariableDeclaration(VariableDeclaration node)");
+
         StringBuilder sb = new StringBuilder();
-
         sb.append(line("VariableDeclaration (" + node.keyword() + " " + node.name() + ")"));
-
         if (node.initializer() != null) {
             indentLevel++;
             sb.append(line("Initializer:"));
@@ -118,14 +130,14 @@ public class AstPrinterVisitor implements AstVisitor<String> {
             sb.append(node.initializer().accept(this));
             indentLevel -= 2;
         }
-
         return sb.toString();
     }
 
     @Override
     public String visitExpressionStatement(ExpressionStatement node) {
-        StringBuilder sb = new StringBuilder();
+        log.trace("visitExpressionStatement(ExpressionStatement node)");
 
+        StringBuilder sb = new StringBuilder();
         sb.append(line("ExpressionStatement"));
 
         indentLevel++;
@@ -136,7 +148,7 @@ public class AstPrinterVisitor implements AstVisitor<String> {
     }
 
     @Override
-    public String visitBlock(BlockStatement node) {
+    public String visitBlockStatement(BlockStatement node) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(line("Block"));
@@ -183,7 +195,7 @@ public class AstPrinterVisitor implements AstVisitor<String> {
     }
 
     @Override
-    public String visitIf(IfStatement node) {
+    public String visitIfStatement(IfStatement node) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(line("IfStatement"));

@@ -6,11 +6,21 @@ import java.util.Set;
 
 public final class JavascriptLanguageDefinition extends AbstractLanguageDefinition {
 
+    /*
     private static final Set<String> KEYWORDS = Set.of(
         "break","case","catch","class","const","continue","debugger","default","delete",
         "do","else","export","extends","finally","for","function","if","import","in",
         "instanceof","let","new","return","super","switch","this","throw","try",
         "typeof","var","void","while","with","yield","await","static"
+    );
+    */
+    private static final Set<String> KEYWORDS = Set.of(
+        "break", "case", "catch", "class", "const", "continue", "debugger",
+        "default", "delete", "do", "else", "export", "extends", "finally",
+        "for", "function", "if", "import", "in", "instanceof", "let",
+        "new", "return", "super", "switch", "this", "throw", "try",
+        "typeof", "var", "void", "while", "with", "yield",
+        "async", "await", "of", "static", "get", "set"
     );
 
     private static final Set<String> OPS = Set.of(

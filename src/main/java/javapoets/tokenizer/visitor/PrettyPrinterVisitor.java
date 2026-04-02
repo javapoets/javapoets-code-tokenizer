@@ -4,8 +4,20 @@ import javapoets.tokenizer.ast.*;
 
 public class PrettyPrinterVisitor implements AstVisitor<String> {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PrettyPrinterVisitor.class);
+
     private int indentLevel = 0;
 
+    @Override
+    public String visitBooleanLiteralExpression(BooleanLiteralExpression expr) {
+        return String.valueOf(expr.value());
+    }
+
+    @Override
+    public String visitEmptyStatement(EmptyStatement stmt) {
+        return "";
+    }
+    
     private String indent() {
         return "  ".repeat(indentLevel);
     }
@@ -42,8 +54,9 @@ public class PrettyPrinterVisitor implements AstVisitor<String> {
 
     @Override
     public String visitVariableDeclaration(VariableDeclaration node) {
-        StringBuilder sb = new StringBuilder();
+        log.trace("visitVariableDeclaration(VariableDeclaration node)");
 
+        StringBuilder sb = new StringBuilder();
         sb.append(indent())
           .append(node.keyword())
           .append(" ")
@@ -65,14 +78,19 @@ public class PrettyPrinterVisitor implements AstVisitor<String> {
     }
 
     @Override
-    public String visitBlock(BlockStatement node) {
-        StringBuilder sb = new StringBuilder();
+    public String visitBlockStatement(BlockStatement node) {
 
+        StringBuilder sb = new StringBuilder();
         sb.append(indent()).append("{\n");
         indentLevel++;
 
         for (Statement stmt : node.statements()) {
             sb.append(stmt.accept(this));
+            /*
+            Statement result = (Statement) stmt.accept(this);
+            if (result instanceof EmptyStatement) continue; // Remove empty statements here
+            sb.append(result);
+            */
         }
 
         indentLevel--;
@@ -89,7 +107,7 @@ public class PrettyPrinterVisitor implements AstVisitor<String> {
     }
 
     @Override
-    public String visitIf(IfStatement node) {
+    public String visitIfStatement(IfStatement node) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(indent())

@@ -16,4 +16,14 @@ class JavascriptParserTest extends BaseJavascriptTest {
         assertThat(ast).hasSize(1);
         assertThat(ast.get(0)).isInstanceOf(IfStatement.class);
     }
+
+    /*
+    @Test
+    void should_parse_boolean_literal() {
+        var ast = parse("true;");
+
+        assertThat(ast).hasSize(1);
+        // optionally assert AST type depending on your structure
+    }
+    */
 }

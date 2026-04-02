@@ -2,7 +2,20 @@ package javapoets.tokenizer.optimizer;
 
 import javapoets.tokenizer.ast.*;
 
-public class OptimizerVisitor implements AstVisitor<AstNode> {
+//public class OptimizerVisitor implements AstVisitor<AstNode> {
+public class OptimizerVisitor extends BaseAstVisitor<AstNode> {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OptimizerVisitor.class);
+
+    @Override
+    public AstNode visitBooleanLiteralExpression(BooleanLiteralExpression expr) {
+        return expr; // no-op
+    }
+
+    @Override
+    public AstNode visitEmptyStatement(EmptyStatement stmt) {
+        return stmt;
+    }
 
     // -------------------
     // EXPRESSIONS
@@ -24,7 +37,7 @@ public class OptimizerVisitor implements AstVisitor<AstNode> {
         Expression left = (Expression) node.left().accept(this);
         Expression right = (Expression) node.right().accept(this);
 
-        // 🔥 CONSTANT FOLDING
+        // CONSTANT FOLDING
         if (left instanceof AstNode.LiteralExpression l && right instanceof AstNode.LiteralExpression r) {
             Object result = fold(l.value(), node.operator(), r.value());
 
@@ -70,12 +83,12 @@ public class OptimizerVisitor implements AstVisitor<AstNode> {
 
     @Override
     public AstNode visitVariableDeclaration(VariableDeclaration node) {
-        Expression init = null;
+        log.trace("visitVariableDeclaration(VariableDeclaration node)");
 
+        Expression init = null;
         if (node.initializer() != null) {
             init = (Expression) node.initializer().accept(this);
         }
-
         return new VariableDeclaration(node.keyword(), node.name(), init);
     }
 
@@ -86,18 +99,42 @@ public class OptimizerVisitor implements AstVisitor<AstNode> {
         );
     }
 
+    /*
     @Override
-    public AstNode visitBlock(BlockStatement node) {
+    public AstNode visitBlockStatement(BlockStatement node) {
         var statements = node.statements().stream()
             .map(stmt -> (Statement) stmt.accept(this))
             .toList();
 
         return new BlockStatement(statements);
     }
-
-    // 🔥 DEAD CODE ELIMINATION (simple)
+    */
     @Override
-    public AstNode visitIf(IfStatement node) {
+    public AstNode visitBlockStatement(BlockStatement block) {
+
+        java.util.List<Statement> normalized = new java.util.ArrayList<>();
+
+        for (Statement stmt : block.statements()) {
+
+            Statement result = (Statement) stmt.accept(this);
+
+            // 🔥 REMOVE EMPTY STATEMENTS HERE
+            if (result instanceof EmptyStatement) continue;
+
+            // 🔥 FLATTEN NESTED BLOCKS
+            if (result instanceof BlockStatement nested) {
+                normalized.addAll(nested.statements());
+            } else {
+                normalized.add(result);
+            }
+        }
+
+        return new BlockStatement(normalized);
+    }
+
+    // DEAD CODE ELIMINATION (simple)
+    @Override
+    public AstNode visitIfStatement(IfStatement node) {
 
         Expression condition = (Expression) node.condition().accept(this);
 

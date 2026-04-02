@@ -9,9 +9,12 @@ import javapoets.tokenizer.test.BaseJavascriptTest;
 
 class EndToEndJavascriptTest extends BaseJavascriptTest {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(EndToEndJavascriptTest.class);
+
     @Test
     void should_optimize_obfuscate_and_minify() {
-        
+        log.info("should_optimize_obfuscate_and_minify()");
+
         var ast = parse("""
             let total = 10 + 5 * 2;
             if (true) {
@@ -19,10 +22,11 @@ class EndToEndJavascriptTest extends BaseJavascriptTest {
             }
         """);
 
-        var pipeline = new OptimizationPipeline()
+            var pipeline = new OptimizationPipeline()
             .addPass(new ConstantFoldingPass())
             .addPass(new AlgebraicSimplificationPass())
-            .addPass(new DeadCodeEliminationPass());
+            .addPass(new DeadCodeEliminationPass())
+            .addPass(new ControlFlowNormalizationPass());
 
         var optimized = pipeline.optimize(ast);
 
@@ -31,8 +35,10 @@ class EndToEndJavascriptTest extends BaseJavascriptTest {
         var obfuscated = optimized.stream()
             .map(stmt -> (Statement) stmt.accept(obfuscator))
             .toList();
+        log.debug("obfuscated = " + obfuscated);
 
         String output = minify(obfuscated);
+        log.debug("output = " + output);
 
         assertThat(output).isEqualTo("let a=20;{let b=a;}");
     }
